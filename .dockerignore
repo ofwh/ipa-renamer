@@ -1,0 +1,14 @@
+.git
+.gitignore
+.github
+dist
+renamed
+watched
+output
+.env
+.env.example
+README.md
+LICENSE
+docker-compose.yml
+Dockerfile
+*.md

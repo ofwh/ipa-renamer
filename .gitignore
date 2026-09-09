@@ -1,0 +1,16 @@
+# build output
+/ipa-renamer
+/ipa-renamer.exe
+/dist/
+
+# default runtime directories
+/renamed/
+/output/
+/watched/
+
+# editor / OS noise
+.DS_Store
+*.swp
+
+# local container configuration
+.env

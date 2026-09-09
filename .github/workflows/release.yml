@@ -1,0 +1,71 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Full history so the auto-generated release notes are complete.
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Derive version
+        id: ver
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VER="${GITHUB_REF_NAME#v}"
+          else
+            VER="dev"
+          fi
+          echo "value=${VER}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build cross-platform binaries
+        env:
+          VER: ${{ steps.ver.outputs.value }}
+        run: |
+          set -euo pipefail
+          LDFLAGS="-s -w -X github.com/ofwh/ipa-renamer/src.version=${VER}"
+          targets=("linux amd64" "linux arm64" "darwin amd64" "darwin arm64" "windows amd64" "windows arm64")
+          for target in "${targets[@]}"; do
+            read -r goos goarch <<< "$target"
+            ext=""
+            [[ "$goos" == "windows" ]] && ext=".exe"
+            name="ipa-renamer_${VER}_${goos}_${goarch}"
+            dir="dist/${name}"
+            mkdir -p "$dir"
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+              go build -trimpath -mod=readonly -ldflags "$LDFLAGS" \
+              -o "$dir/ipa-renamer${ext}" ./src
+            (
+              cd "$dir"
+              tar -czf "${name}.tar.gz" "ipa-renamer${ext}"
+              openssl dgst -sha256 -r "${name}.tar.gz" > "${name}.tar.gz.sha256"
+              rm -f "ipa-renamer${ext}"
+            )
+          done
+          ls -lR dist
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/**/*
+          generate_release_notes: true

@@ -1,0 +1,19 @@
+services:
+  ipa-renamer:
+    # Image published by .github/workflows/docker-image.yml to GHCR.
+    image: ghcr.io/ofwh/ipa-renamer:latest
+    restart: unless-stopped
+    # Parameters are supplied as environment (values come from a local .env,
+    # see .env.example); the image entrypoint turns them into CLI arguments.
+    # The image runs as uid 65534; host bind mounts belong to your user, so
+    # this example runs as root. Drop `user` and chown ./watched ./output to
+    # uid 65534 for a non-root setup.
+    user: "0"
+    environment:
+      IPA_RENAMER_WATCH: "${IPA_RENAMER_WATCH:-1}"
+      IPA_RENAMER_INPUT: "${IPA_RENAMER_INPUT:-/app/in}"
+      IPA_RENAMER_OUTPUT: "${IPA_RENAMER_OUTPUT:-/app/out}"
+      IPA_RENAMER_TIME: "${IPA_RENAMER_TIME:-5}"
+    volumes:
+      - ./watched:/app/in
+      - ./output:/app/out
