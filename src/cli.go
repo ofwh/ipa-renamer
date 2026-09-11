@@ -20,6 +20,7 @@ type Options struct {
 	Time        time.Duration // watch settle delay (default: defaultTimeSeconds * time.Second)
 	Watch       bool          // watch Input for new/changed .ipa files
 	Copy        bool          // copy instead of renaming, keeping the source file
+	Verbose     bool          // log the resolved startup parameters and other diagnostics
 	ShowHelp    bool
 	ShowVersion bool
 
@@ -130,6 +131,11 @@ func parseArgs(args []string) (*Options, error) {
 				return nil, err
 			}
 			o.Copy = true
+		case "v", "verbose":
+			if err := noValue(); err != nil {
+				return nil, err
+			}
+			o.Verbose = true
 		case "i", "input":
 			v, err := takeValue()
 			if err != nil {
@@ -207,6 +213,9 @@ Options:
                           unchanged for this many seconds (default: 5).
   -w, --watch             Watch INPUT and process new/changed .ipa files as
                           they appear, instead of scanning once and exiting.
+  -v, --verbose           Log DEBUG records: the arguments as received, the
+                          resolved settings, and every file system event the
+                          watcher sees.
   -h, --help              Show this help and exit.
   -V, --version           Show the version and exit.
 
@@ -215,5 +224,6 @@ Examples:
   ipa-renamer -o /path/to/output
   ipa-renamer -c -i /path/to/input -o /path/to/output
   ipa-renamer -w -t 8 -i /path/to/input -o /path/to/output
+  ipa-renamer -v -w -i /path/to/input -o /path/to/output
 `
 }

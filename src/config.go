@@ -11,10 +11,11 @@ import (
 // Config carries the resolved runtime settings. Output and Time always carry a
 // value once parseArgs applied its defaults; Input may be "." (current dir).
 type Config struct {
-	Input  string
-	Output string
-	Time   time.Duration
-	Copy   bool
+	Input   string
+	Output  string
+	Time    time.Duration
+	Copy    bool
+	Verbose bool
 }
 
 // config converts the directories to absolute paths so they remain valid
@@ -28,7 +29,13 @@ func (o *Options) config() (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolve output dir %q: %w", o.Output, err)
 	}
-	return &Config{Input: input, Output: output, Time: o.Time, Copy: o.Copy}, nil
+	return &Config{
+		Input:   input,
+		Output:  output,
+		Time:    o.Time,
+		Copy:    o.Copy,
+		Verbose: o.Verbose,
+	}, nil
 }
 
 // ensureDirs creates Output and, when createInput is set, Input.

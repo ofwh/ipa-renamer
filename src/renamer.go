@@ -80,6 +80,7 @@ func RenameOne(cfg Config, srcPath string) (string, error) {
 		return "", err
 	}
 	dst := filepath.Join(cfg.Output, renamedFileName(rawNameOf(srcPath), bundleID))
+	logDebug("%s: CFBundleIdentifier=%s -> %s", srcPath, bundleID, dst)
 	if cfg.Copy {
 		err = copyFile(srcPath, dst)
 	} else {
@@ -96,19 +97,23 @@ func RenameOne(cfg Config, srcPath string) (string, error) {
 // successful rename, "" when the path was skipped, or an error on failure.
 func Process(cfg Config, path string) (string, error) {
 	if !isIPASource(path) {
+		logDebug("skip %s: not a .ipa file", path)
 		return "", nil
 	}
 	if isAlreadyNamed(filepath.Base(path)) {
+		logDebug("skip %s: already named <raw>@<bundle-id>.ipa", path)
 		return "", nil
 	}
 	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
+			logDebug("skip %s: no longer exists", path)
 			return "", nil
 		}
 		return "", err
 	}
 	if info.IsDir() {
+		logDebug("skip %s: is a directory", path)
 		return "", nil
 	}
 	return RenameOne(cfg, path)

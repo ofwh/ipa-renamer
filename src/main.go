@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const progName = "ipa-renamer"
@@ -30,6 +31,9 @@ func run(args []string) int {
 		return 0
 	}
 
+	// Only now, so that -v itself can be reported like any other setting.
+	verbose = opts.Verbose
+
 	if opts.timeSet && !opts.Watch {
 		logWarn("--time has no effect without -w/--watch")
 	}
@@ -40,6 +44,8 @@ func run(args []string) int {
 		return 1
 	}
 
+	logStartup(args, opts, cfg)
+
 	if opts.Watch {
 		if err := Watch(*cfg); err != nil {
 			logError("%v", err)
@@ -48,6 +54,63 @@ func run(args []string) int {
 		return 0
 	}
 	return oneShot(*cfg)
+}
+
+// logStartup records the arguments as received and the settings they resolved to.
+func logStartup(args []string, opts *Options, cfg *Config) {
+	if !verbose {
+		return
+	}
+	logDebug("version %s", version)
+	if wd, err := os.Getwd(); err == nil {
+		logDebug("working directory %s", wd)
+	}
+	logArgv(args)
+	logDebug("input=%s output=%s watch=%t copy=%t settle=%s",
+		cfg.Input, cfg.Output, opts.Watch, cfg.Copy, cfg.Time)
+}
+
+// logArgv prints one option per line, aligned under the program name.
+func logArgv(args []string) {
+	if len(args) == 0 {
+		logDebug("%s", progName)
+		return
+	}
+	pairs := groupArgs(args)
+	logDebug("%s %s", progName, pairs[0])
+	indent := strings.Repeat(" ", len(progName)+1)
+	for _, opt := range pairs[1:] {
+		logDebug("%s%s", indent, opt)
+	}
+}
+
+// groupArgs joins each flag with the value following it, so that "-i /app/in"
+// stays on one line.
+func groupArgs(args []string) []string {
+	var out []string
+	for i := 0; i < len(args); i++ {
+		opt := args[i]
+		if i+1 < len(args) && takesValue(opt) {
+			if next := args[i+1]; next == "-" || !strings.HasPrefix(next, "-") {
+				opt += " " + next
+				i++
+			}
+		}
+		out = append(out, opt)
+	}
+	return out
+}
+
+// takesValue reports whether a flag is followed by its value.
+func takesValue(opt string) bool {
+	if !strings.HasPrefix(opt, "-") || opt == "-" || strings.Contains(opt, "=") {
+		return false
+	}
+	switch strings.TrimLeft(opt, "-") {
+	case "i", "input", "o", "output", "t", "time":
+		return true
+	}
+	return false
 }
 
 // oneShot scans the input directory once and renames every matching .ipa file.

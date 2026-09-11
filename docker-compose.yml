@@ -5,9 +5,9 @@ services:
     restart: unless-stopped
     # Image runs as uid 65534; root keeps host bind mounts writable.
     user: "0"
+    # Map form: the list form keeps the quotes as part of the value.
     environment:
-      - IDLE_TIMEOUT="${IDLE_TIMEOUT:-5}"
-      - WATCH="${WATCH:-1}"
+      IDLE_TIMEOUT: "${IDLE_TIMEOUT:-5}"
     volumes:
       - "${INPUT_DIR:-./watched}:/app/in"
       - "${OUTPUT_DIR:-./output}:/app/out"

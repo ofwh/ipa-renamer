@@ -1,16 +1,15 @@
 #!/bin/sh
 set -eu
 
-set -- /app/ipa-renamer -i /app/in -o /app/out "$@"
+set -- /app/ipa-renamer -i /app/in -o /app/out
 
-case "${WATCH:-}" in
-  1 | true | yes | on)
-    # -t only applies to watch mode.
-    if [ -n "${IDLE_TIMEOUT:-}" ]; then
-      set -- "$@" -t "$IDLE_TIMEOUT"
-    fi
-    set -- "$@" -w
-    ;;
+case "${WATCH:-1}" in
+  0) ;;
+  *) set -- "$@" -t "${IDLE_TIMEOUT:-5}" -w ;;
+esac
+
+case "${VERBOSE:-0}" in
+  1) set -- "$@" -v ;;
 esac
 
 exec "$@"

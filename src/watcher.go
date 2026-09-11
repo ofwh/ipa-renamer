@@ -79,6 +79,7 @@ func Watch(cfg Config) error {
 			}
 			mu.Unlock()
 			for _, path := range due {
+				logDebug("settled after %s: %s", cfg.Time, path)
 				jobs <- path
 			}
 		}
@@ -118,6 +119,7 @@ func Watch(cfg Config) error {
 			if !ok {
 				return nil
 			}
+			logDebug("event %s: %s", event.Op, event.Name)
 			if event.Op&(fsnotify.Create|fsnotify.Write|fsnotify.Rename) != 0 {
 				recordEvent(event.Name)
 			}

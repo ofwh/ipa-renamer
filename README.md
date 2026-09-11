@@ -19,6 +19,7 @@ ipa-renamer [options] [INPUT]
 | `-t, --time <秒>` | watch 模式下，文件持续多少秒无变动才触发处理（缺省 5） |
 | `-w, --watch` | 监听输入目录：持续处理新增/变动的 `.ipa`，而不是扫描一次后退出 |
 | `-h, --help` | 显示帮助 |
+| `-v, --verbose` | 调试模式 |
 | `-V, --version` | 显示版本 |
 
 示例：
@@ -64,7 +65,7 @@ docker run -v "$PWD/watched:/app/in" -v "$PWD/output:/app/out" ipa-renamer
 
 镜像默认以非特权用户 `65534`（nobody）运行，工作目录为 `/app`。宿主 bind mount 目录的所有者通常是本机用户，直接挂载可能遇到权限问题：可将挂载目录 `chown -R 65534:65534`，或在运行时用 `--user 0` 覆盖。
 
-### docker-compose
+## docker-compose
 
 - 复制 [`docker-compose.yml`](docker-compose.yml) 按需修改（主要是 `user` 部分）
 - 复制 [`.env.example`](.env.example) 为 `.env` 后修改
