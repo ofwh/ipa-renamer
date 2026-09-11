@@ -22,9 +22,9 @@ func logError(format string, a ...any) { logAt(os.Stderr, "ERROR", format, a...)
 // logRenamed and logRenameFailed keep the per-file wording identical between
 // one-shot and watch mode.
 func logRenamed(src, dst string) {
-	logInfo("renamed %s -> %s", src, dst)
+	logInfo("✓ %s -> %s", src, dst)
 }
 
 func logRenameFailed(src string, err error) {
-	logError("failed to rename %s: %v", src, err)
+	logError("𐄂 %s: %v", src, err)
 }

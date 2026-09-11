@@ -27,6 +27,9 @@ func Watch(cfg Config) error {
 	if err := cfg.ensureDirs(true); err != nil {
 		return err
 	}
+	if err := cfg.checkDirs(); err != nil {
+		return err
+	}
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

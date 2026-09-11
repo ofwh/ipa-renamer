@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -13,6 +14,7 @@ type Config struct {
 	Input  string
 	Output string
 	Time   time.Duration
+	Copy   bool
 }
 
 // config converts the directories to absolute paths so they remain valid
@@ -26,7 +28,7 @@ func (o *Options) config() (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolve output dir %q: %w", o.Output, err)
 	}
-	return &Config{Input: input, Output: output, Time: o.Time}, nil
+	return &Config{Input: input, Output: output, Time: o.Time, Copy: o.Copy}, nil
 }
 
 // ensureDirs creates Output and, when createInput is set, Input.
@@ -40,4 +42,44 @@ func (c *Config) ensureDirs(createInput bool) error {
 		}
 	}
 	return nil
+}
+
+// checkDirs verifies that Input can be listed and Output can be written to, and
+// logs the result for each directory.
+func (c *Config) checkDirs() error {
+	if err := checkReadableDir(c.Input); err != nil {
+		return fmt.Errorf("input directory %s: %w", c.Input, err)
+	}
+	logInfo("input directory is readable: %s", c.Input)
+
+	if err := checkWritableDir(c.Output); err != nil {
+		return fmt.Errorf("output directory %s: %w", c.Output, err)
+	}
+	logInfo("output directory is writable: %s", c.Output)
+	return nil
+}
+
+// checkReadableDir reports whether dir can be opened and listed.
+func checkReadableDir(dir string) error {
+	f, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, err := f.Readdirnames(1); err != nil && err != io.EOF {
+		return err
+	}
+	return nil
+}
+
+// checkWritableDir reports whether a file can be created in dir, and removes
+// the probe file again.
+func checkWritableDir(dir string) error {
+	f, err := os.CreateTemp(dir, ".ipa-renamer-*")
+	if err != nil {
+		return err
+	}
+	name := f.Name()
+	f.Close()
+	return os.Remove(name)
 }

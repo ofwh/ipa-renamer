@@ -5,7 +5,13 @@ FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS build
 
 ARG TARGETOS
 ARG TARGETARCH
-ARG VERSION=0.1.0
+ARG VERSION
+
+# Required: -V/--version reports this, so the build fails when it is unset.
+RUN if [ -z "${VERSION}" ]; then \
+      echo "error: the VERSION build arg is required, e.g. --build-arg VERSION=0.1.0." >&2; \
+      exit 1; \
+    fi
 
 WORKDIR /src
 
@@ -19,32 +25,34 @@ COPY . .
 RUN mkdir -p /out \
     && CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
        go build -trimpath -mod=readonly \
-         -ldflags "-s -w -X github.com/ofwh/ipa-renamer/src.version=${VERSION}" \
+         -ldflags "-s -w -X main.version=${VERSION}" \
          -o /out/ipa-renamer ./src
 
-# --- Runtime: entrypoint turns IPA_RENAMER_* env vars into CLI arguments. ---
-FROM alpine:3.24
+# --- Runtime: everything lives under /app. ----------------------------------
+FROM alpine:latest
 
-ARG VERSION=0.1.0
+ARG VERSION
 
 LABEL org.opencontainers.image.title="ipa-renamer" \
-      org.opencontainers.image.description="Scan or watch .ipa files and copy them as <name>@<CFBundleIdentifier>.ipa" \
+      org.opencontainers.image.description="Rename ipa file with bundle identifier read from the app's Info.plist inside the archive." \
       org.opencontainers.image.source="https://github.com/ofwh/ipa-renamer" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.version="${VERSION}"
 
-COPY docker/entrypoint.sh /entrypoint.sh
-COPY --from=build /out/ipa-renamer /usr/local/bin/ipa-renamer
+COPY docker/entrypoint.sh /app/entrypoint.sh
+COPY --from=build /out/ipa-renamer /app/ipa-renamer
 
-RUN chmod +x /entrypoint.sh \
-    && mkdir -p /data \
-    && chown 65534:65534 /data
+RUN chmod +x /app/entrypoint.sh \
+    && mkdir -p /app/in /app/out \
+    && chown -R 65534:65534 /app
 
-WORKDIR /data
-ENV HOME=/data
+WORKDIR /app
 
-# Non-root (65534 = nobody); /data is owned by it so the built-in defaults
-# (input ".", output "renamed") remain writable when no variables are set.
+ENV HOME=/app \
+    IDLE_TIMEOUT=5 \
+    WATCH=1
+
+# Non-root (65534 = nobody), owning the directories above.
 USER 65534:65534
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]

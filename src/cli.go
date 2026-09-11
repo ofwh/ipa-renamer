@@ -10,16 +10,16 @@ import (
 const (
 	// Compiled-in defaults, used when no value is supplied on the command line.
 	defaultInputDir    = "."
-	defaultOutputDir   = "renamed"
 	defaultTimeSeconds = 5
 )
 
 // Options holds the parsed command line.
 type Options struct {
 	Input       string        // input directory (default: defaultInputDir)
-	Output      string        // output directory (default: defaultOutputDir)
+	Output      string        // output directory (default: Input)
 	Time        time.Duration // watch settle delay (default: defaultTimeSeconds * time.Second)
 	Watch       bool          // watch Input for new/changed .ipa files
+	Copy        bool          // copy instead of renaming, keeping the source file
 	ShowHelp    bool
 	ShowVersion bool
 
@@ -125,6 +125,11 @@ func parseArgs(args []string) (*Options, error) {
 				return nil, err
 			}
 			o.Watch = true
+		case "c", "copy":
+			if err := noValue(); err != nil {
+				return nil, err
+			}
+			o.Copy = true
 		case "i", "input":
 			v, err := takeValue()
 			if err != nil {
@@ -173,7 +178,7 @@ func parseArgs(args []string) (*Options, error) {
 		o.Input = defaultInputDir
 	}
 	if !outputGiven {
-		o.Output = defaultOutputDir
+		o.Output = o.Input
 	}
 	if !o.timeSet {
 		o.Time = defaultTimeSeconds * time.Second
@@ -195,7 +200,9 @@ Arguments:
 Options:
   -i, --input <DIR>       Input directory; equivalent to INPUT. Errors when
                           both are given with different values.
-  -o, --output <DIR>      Output directory (default: "renamed").
+  -o, --output <DIR>      Output directory (default: the input directory).
+  -c, --copy              Copy the renamed file instead of renaming it, so the
+                          source .ipa is kept.
   -t, --time <SECONDS>    In watch mode, process a .ipa only after it has been
                           unchanged for this many seconds (default: 5).
   -w, --watch             Watch INPUT and process new/changed .ipa files as
@@ -204,9 +211,9 @@ Options:
   -V, --version           Show the version and exit.
 
 Examples:
-  ipa-renamer /path/to/input -o /path/to/output
   ipa-renamer -i /path/to/input -o /path/to/output
   ipa-renamer -o /path/to/output
+  ipa-renamer -c -i /path/to/input -o /path/to/output
   ipa-renamer -w -t 8 -i /path/to/input -o /path/to/output
 `
 }

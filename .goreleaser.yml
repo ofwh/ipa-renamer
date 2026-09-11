@@ -1,0 +1,54 @@
+version: 2
+
+project_name: ipa-renamer
+
+builds:
+  - id: ipa-renamer
+    # The main package is under src/, not at the repository root.
+    main: ./src
+    binary: ipa-renamer
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+      - -mod=readonly
+    # main.version, not the import path: the linker names a main package "main".
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore"
+      - "^ci"
+      - "^style:"
+      - "^Merge"
+
+release:
+  # Tags such as v1.2.3-rc1 are published as prereleases.
+  prerelease: auto
+  # Re-running a publish for an existing tag replaces the colliding assets
+  # instead of failing with a 422.
+  replace_existing_artifacts: true

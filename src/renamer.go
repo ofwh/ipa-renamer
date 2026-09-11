@@ -35,6 +35,20 @@ func renamedFileName(raw, bundleID string) string {
 	return raw + "@" + bundleID + ".ipa"
 }
 
+// moveFile relocates src to dst, replacing any existing dst. Two paths on the
+// same filesystem are moved with a plain rename; otherwise the file is copied
+// and the source removed. A failed rename also lands there, which is what
+// Windows needs, since it refuses to rename onto an existing destination.
+func moveFile(src, dst string) error {
+	if err := os.Rename(src, dst); err == nil {
+		return nil
+	}
+	if err := copyFile(src, dst); err != nil {
+		return err
+	}
+	return os.Remove(src)
+}
+
 // copyFile streams src onto dst, overwriting dst.
 func copyFile(src, dst string) error {
 	in, err := os.Open(src)
@@ -56,16 +70,22 @@ func copyFile(src, dst string) error {
 	return closeErr
 }
 
-// RenameOne copies a source .ipa into cfg.Output as <raw>@<bundle-id>.ipa,
-// reading the bundle identifier from the archive's Info.plist. The source file
-// is left untouched.
+// RenameOne writes a source .ipa into cfg.Output as <raw>@<bundle-id>.ipa,
+// reading the bundle identifier from the archive's Info.plist. The file is
+// moved, so the source is gone once the destination is in place, unless
+// cfg.Copy is set, in which case it is copied and the source is kept.
 func RenameOne(cfg Config, srcPath string) (string, error) {
 	bundleID, err := ipaBundleID(srcPath)
 	if err != nil {
 		return "", err
 	}
 	dst := filepath.Join(cfg.Output, renamedFileName(rawNameOf(srcPath), bundleID))
-	if err := copyFile(srcPath, dst); err != nil {
+	if cfg.Copy {
+		err = copyFile(srcPath, dst)
+	} else {
+		err = moveFile(srcPath, dst)
+	}
+	if err != nil {
 		return "", err
 	}
 	return dst, nil

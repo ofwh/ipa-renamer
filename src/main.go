@@ -56,9 +56,8 @@ func oneShot(cfg Config) int {
 		logError("%v", err)
 		return 1
 	}
-	info, err := os.Stat(cfg.Input)
-	if err != nil || !info.IsDir() {
-		logError("input directory does not exist: %s", cfg.Input)
+	if err := cfg.checkDirs(); err != nil {
+		logError("%v", err)
 		return 1
 	}
 	entries, err := os.ReadDir(cfg.Input)
@@ -84,7 +83,7 @@ func oneShot(cfg Config) int {
 		}
 	}
 
-	logInfo("done: %d renamed, %d failed", renamed, failed)
+	logInfo("Done: %d ✓, %d 𐄂", renamed, failed)
 	if failed > 0 {
 		return 1
 	}
