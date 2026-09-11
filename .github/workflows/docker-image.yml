@@ -3,12 +3,6 @@ name: Build and push container image
 on:
   push:
     tags: ["v*"]
-  workflow_call:
-    inputs:
-      tag:
-        description: Tag to build, e.g. v1.2.3.
-        required: true
-        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -17,8 +11,6 @@ on:
         type: string
 
 concurrency:
-  # Keyed on the tag, not github.ref: inside a called workflow github.ref is the
-  # caller's branch, which would collapse every release into one group.
   group: container-image-${{ inputs.tag || github.ref }}
   cancel-in-progress: false
 
@@ -34,7 +26,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          # Callers pass a tag; a tag push leaves inputs.tag empty and falls back to github.ref.
           ref: ${{ inputs.tag || github.ref }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4

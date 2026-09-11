@@ -3,12 +3,6 @@ name: release
 on:
   push:
     tags: ["v*"]
-  workflow_call:
-    inputs:
-      tag:
-        description: Tag to build and publish, e.g. v1.2.3.
-        required: true
-        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -19,6 +13,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Build and publish binaries
@@ -27,7 +25,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          # Callers pass a tag; a tag push leaves inputs.tag empty and falls back to github.ref.
           ref: ${{ inputs.tag || github.ref }}
           # Full history: GoReleaser reads tags and builds the changelog from it.
           fetch-depth: 0
