@@ -7,7 +7,10 @@ services:
     user: "0"
     # Map form: the list form keeps the quotes as part of the value.
     environment:
-      IDLE_TIMEOUT: "${IDLE_TIMEOUT:-5}"
+      IDLE_TIMEOUT: "${IDLE_TIMEOUT:-5}"   # passed to -t: settle delay
+      # RECURSIVE: "${RECURSIVE:-1}"       # pass -r: recurse into subdirectories
+      # VERBOSE: "${VERBOSE:-0}"           # pass -v: debug logging
+      # WATCH: "${WATCH:-1}"               # pass -w: watch instead of a single scan
     volumes:
       - "${INPUT_DIR:-./watched}:/app/in"
       - "${OUTPUT_DIR:-./output}:/app/out"

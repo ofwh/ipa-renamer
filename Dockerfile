@@ -50,6 +50,7 @@ WORKDIR /app
 
 ENV HOME=/app \
     IDLE_TIMEOUT=5 \
+    RECURSIVE=1 \
     WATCH=1
 
 # Non-root (65534 = nobody), owning the directories above.

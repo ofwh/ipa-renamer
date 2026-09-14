@@ -16,10 +16,10 @@ ipa-renamer [options] [INPUT]
 | `-i, --input <DIR>`  | 输入目录，与位置参数 `INPUT` 等价（两者同时给出且值不同时报错） |
 | `-o, --output <DIR>` | 输出目录，存放重命名后的文件（缺省与输入目录相同）              |
 | `-c, --copy`         | 复制重命名后的文件，保留源 `.ipa`；缺省为重命名，源文件会被删除 |
+| `-r, --recursive`    | 递归处理子目录下的 `.ipa`（任意深度），不保留目录结构           |
 | `-t, --time <秒>`    | watch 模式下，文件持续多少秒无变动才触发处理（缺省 5）          |
 | `-w, --watch`        | 监听输入目录：持续处理新增/变动的 `.ipa`，而不是扫描一次后退出  |
 | `-v, --verbose`      | 调试模式                                                        |
-| `-r, --recursive`    | 递归处理子目录下文件                                            |
 | `-V, --version`      | 显示版本                                                        |
 | `-h, --help`         | 显示帮助                                                        |
 
@@ -35,8 +35,14 @@ ipa-renamer -i /path/to/input -o /path/to/output
 # 扫描当前目录
 ipa-renamer -o /path/to/output
 
+# 递归处理子目录下的 .ipa
+ipa-renamer -r -i /path/to/input -o /path/to/output
+
 # 监听输入目录，文件静默 8 秒后处理
 ipa-renamer -w -t 8 -i /path/to/input -o /path/to/output
+
+# 监听并递归，输出调试日志
+ipa-renamer -v -w -r -i /path/to/input -o /path/to/output
 ```
 
 ## 本地构建
@@ -65,6 +71,23 @@ docker run -v "$PWD/watched:/app/in" -v "$PWD/output:/app/out" ipa-renamer
 ```
 
 镜像默认以非特权用户 `65534`（nobody）运行，工作目录为 `/app`。宿主 bind mount 目录的所有者通常是本机用户，直接挂载可能遇到权限问题：可将挂载目录 `chown -R 65534:65534`，或在运行时用 `--user 0` 覆盖。
+
+### 环境变量
+
+入口脚本把环境变量翻译成命令行参数，缺省等价于：
+
+```sh
+ipa-renamer -r -w -t 5 -i /app/in -o /app/out
+```
+
+| 变量           | 说明                                                      | 缺省 |
+| -------------- | --------------------------------------------------------- | ---- |
+| `WATCH`        | 控制是否给 ipa-renamer 传 `-w`；只能为 `0` 或 `1`         | `1`  |
+| `IDLE_TIMEOUT` | 传给 `-t` 的防抖秒数；须为正整数，仅在 `WATCH` 开启时生效 | `5`  |
+| `RECURSIVE`    | 控制是否给 ipa-renamer 传 `-r`；只能为 `0` 或 `1`         | `1`  |
+| `VERBOSE`      | 控制是否给 ipa-renamer 传 `-v`；只能为 `0` 或 `1`         | `0`  |
+
+`WATCH` 与 `RECURSIVE` 缺省开启，所以容器默认递归监听整个输入目录树；`RECURSIVE=0` 时只处理 `/app/in` 顶层的 `.ipa`。
 
 ## docker-compose
 

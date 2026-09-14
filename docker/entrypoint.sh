@@ -8,6 +8,11 @@ case "${WATCH:-1}" in
   *) set -- "$@" -t "${IDLE_TIMEOUT:-5}" -w ;;
 esac
 
+case "${RECURSIVE:-1}" in
+  0) ;;
+  *) set -- "$@" -r ;;
+esac
+
 case "${VERBOSE:-0}" in
   1) set -- "$@" -v ;;
 esac
