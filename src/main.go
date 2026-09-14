@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -66,8 +65,8 @@ func logStartup(args []string, opts *Options, cfg *Config) {
 		logDebug("working directory %s", wd)
 	}
 	logArgv(args)
-	logDebug("input=%s output=%s watch=%t copy=%t settle=%s",
-		cfg.Input, cfg.Output, opts.Watch, cfg.Copy, cfg.Time)
+	logDebug("input=%s output=%s watch=%t recursive=%t copy=%t settle=%s",
+		cfg.Input, cfg.Output, opts.Watch, cfg.Recursive, cfg.Copy, cfg.Time)
 }
 
 // logArgv prints one option per line, aligned under the program name.
@@ -113,7 +112,8 @@ func takesValue(opt string) bool {
 	return false
 }
 
-// oneShot scans the input directory once and renames every matching .ipa file.
+// oneShot scans the input directory once and renames every matching .ipa file,
+// descending into subdirectories when -r/--recursive was given.
 func oneShot(cfg Config) int {
 	if err := cfg.ensureDirs(false); err != nil {
 		logError("%v", err)
@@ -123,18 +123,9 @@ func oneShot(cfg Config) int {
 		logError("%v", err)
 		return 1
 	}
-	entries, err := os.ReadDir(cfg.Input)
-	if err != nil {
-		logError("read input directory: %v", err)
-		return 1
-	}
 
 	renamed, failed := 0, 0
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		src := filepath.Join(cfg.Input, entry.Name())
+	walkIPA(cfg, cfg.Input, func(src string) {
 		dst, err := Process(cfg, src)
 		switch {
 		case err != nil:
@@ -144,7 +135,7 @@ func oneShot(cfg Config) int {
 			renamed++
 			logRenamed(src, dst)
 		}
-	}
+	})
 
 	logInfo("Done: %d ✓, %d 𐄂", renamed, failed)
 	if failed > 0 {

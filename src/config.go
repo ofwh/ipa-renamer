@@ -11,11 +11,12 @@ import (
 // Config carries the resolved runtime settings. Output and Time always carry a
 // value once parseArgs applied its defaults; Input may be "." (current dir).
 type Config struct {
-	Input   string
-	Output  string
-	Time    time.Duration
-	Copy    bool
-	Verbose bool
+	Input     string
+	Output    string
+	Time      time.Duration
+	Recursive bool
+	Copy      bool
+	Verbose   bool
 }
 
 // config converts the directories to absolute paths so they remain valid
@@ -30,11 +31,12 @@ func (o *Options) config() (*Config, error) {
 		return nil, fmt.Errorf("resolve output dir %q: %w", o.Output, err)
 	}
 	return &Config{
-		Input:   input,
-		Output:  output,
-		Time:    o.Time,
-		Copy:    o.Copy,
-		Verbose: o.Verbose,
+		Input:     input,
+		Output:    output,
+		Time:      o.Time,
+		Recursive: o.Recursive,
+		Copy:      o.Copy,
+		Verbose:   o.Verbose,
 	}, nil
 }
 
@@ -51,18 +53,19 @@ func (c *Config) ensureDirs(createInput bool) error {
 	return nil
 }
 
-// checkDirs verifies that Input can be listed and Output can be written to, and
-// logs the result for each directory.
+// checkDirs verifies that Input can be listed and Output can be written to. The
+// result is diagnostic, so it is logged only in verbose mode; a failure is
+// returned either way.
 func (c *Config) checkDirs() error {
 	if err := checkReadableDir(c.Input); err != nil {
 		return fmt.Errorf("input directory %s: %w", c.Input, err)
 	}
-	logInfo("input directory is readable: %s", c.Input)
+	logDebug("input directory is readable: %s", c.Input)
 
 	if err := checkWritableDir(c.Output); err != nil {
 		return fmt.Errorf("output directory %s: %w", c.Output, err)
 	}
-	logInfo("output directory is writable: %s", c.Output)
+	logDebug("output directory is writable: %s", c.Output)
 	return nil
 }
 

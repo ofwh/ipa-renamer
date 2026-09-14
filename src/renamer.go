@@ -74,6 +74,9 @@ func copyFile(src, dst string) error {
 // reading the bundle identifier from the archive's Info.plist. The file is
 // moved, so the source is gone once the destination is in place, unless
 // cfg.Copy is set, in which case it is copied and the source is kept.
+//
+// Every renamed file lands directly in cfg.Output: a recursive run flattens the
+// tree it found rather than reproducing it.
 func RenameOne(cfg Config, srcPath string) (string, error) {
 	bundleID, err := ipaBundleID(srcPath)
 	if err != nil {

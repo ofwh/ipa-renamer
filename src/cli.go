@@ -19,6 +19,7 @@ type Options struct {
 	Output      string        // output directory (default: Input)
 	Time        time.Duration // watch settle delay (default: defaultTimeSeconds * time.Second)
 	Watch       bool          // watch Input for new/changed .ipa files
+	Recursive   bool          // also process .ipa files in subdirectories of Input
 	Copy        bool          // copy instead of renaming, keeping the source file
 	Verbose     bool          // log the resolved startup parameters and other diagnostics
 	ShowHelp    bool
@@ -131,6 +132,11 @@ func parseArgs(args []string) (*Options, error) {
 				return nil, err
 			}
 			o.Copy = true
+		case "r", "recursive":
+			if err := noValue(); err != nil {
+				return nil, err
+			}
+			o.Recursive = true
 		case "v", "verbose":
 			if err := noValue(); err != nil {
 				return nil, err
@@ -209,6 +215,10 @@ Options:
   -o, --output <DIR>      Output directory (default: the input directory).
   -c, --copy              Copy the renamed file instead of renaming it, so the
                           source .ipa is kept.
+  -r, --recursive         Also process the .ipa files in subdirectories of
+                          INPUT, at any depth. The layout is not reproduced:
+                          every renamed file lands directly in OUTPUT. Without
+                          it only the files directly in INPUT are processed.
   -t, --time <SECONDS>    In watch mode, process a .ipa only after it has been
                           unchanged for this many seconds (default: 5).
   -w, --watch             Watch INPUT and process new/changed .ipa files as
@@ -223,6 +233,7 @@ Examples:
   ipa-renamer -i /path/to/input -o /path/to/output
   ipa-renamer -o /path/to/output
   ipa-renamer -c -i /path/to/input -o /path/to/output
+  ipa-renamer -r -i /path/to/input -o /path/to/output
   ipa-renamer -w -t 8 -i /path/to/input -o /path/to/output
   ipa-renamer -v -w -i /path/to/input -o /path/to/output
 `
